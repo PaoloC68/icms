@@ -1,0 +1,27 @@
+<tr>
+  <td>
+    {{process.id}}
+  </td>
+  <td>
+    {{process.summary()}}
+  </td>
+  <td>
+    {{ process.export_application.exporter }}
+  </td>
+  <td>
+    {{process.status}}
+    <br>
+    {{process.created}}
+  </td>
+  <td>
+    <a href="{{flowurl(request, process,url_name='detail', namespace='export')}}">
+      Manage Process
+    </a>
+    {% for task in process.active_tasks() %}
+        {% with namespace = 'export' %}
+            {% include 'web/domains/workbasket/partials/workbasket-item.html' %}
+        {% endwith %}
+    {% endfor %}
+
+  </td>
+</tr>

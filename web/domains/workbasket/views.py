@@ -4,6 +4,7 @@ from django.views.generic.list import ListView
 from web.auth.mixins import RequireRegisteredMixin
 from web.domains.case.access.flows import ImporterAccessRequestFlow, ExporterAccessRequestFlow
 from web.domains.case.access.approval.flows import ApprovalRequestFlow
+from web.domains.case.export.flows import ExportApplicationFlow
 
 from viewflow.models import Process
 
@@ -16,6 +17,11 @@ class Workbasket(RequireRegisteredMixin, ListView):
 
     def get_queryset(self):
         return Process.objects.filter_available(
-            [ImporterAccessRequestFlow, ExporterAccessRequestFlow, ApprovalRequestFlow],
+            [
+                ImporterAccessRequestFlow,
+                ExporterAccessRequestFlow,
+                ApprovalRequestFlow,
+                ExportApplicationFlow,
+            ],
             self.request.user,
         )

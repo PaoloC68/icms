@@ -147,8 +147,11 @@
 
             </thead>
             {% for process in object_list %}
+            {# TODO: structure this much better, this is fragile #}
               {% if process.approval_request %}
                 {% include "web/domains/workbasket/partials/approval-request.html" %}
+              {% elif process.export_application %}
+                {% include "web/domains/workbasket/partials/export-case.html" %}
               {% else %}
                 {% include "web/domains/workbasket/partials/access-request.html" %}
               {% endif %}

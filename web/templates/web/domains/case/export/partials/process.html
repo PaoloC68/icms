@@ -1,0 +1,12 @@
+{% set appl=process.export_application %}
+
+{# FIXME: look at web/templates/web/domains/case/access/partials/access-request-display.html as a template #}
+<ul>
+<li>Case Reference: {{ appl.reference }}
+<li>Case Owner: ???
+<li>Submitted Date: {{ appl.submit_datetime }}
+<li>Application Type: {{ appl.application_type }}
+<li>Exporter: {{ appl.exporter }}
+<li>Contact: {{ appl.contact }}
+<li>Case Status: {{ appl.status }}
+</ul>

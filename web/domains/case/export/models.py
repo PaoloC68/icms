@@ -1,5 +1,7 @@
 from django.db import models
 
+from viewflow.models import Process
+
 from web.domains.case.fir.models import FurtherInformationRequest
 from web.domains.case.models import CaseNote, UpdateRequest, VariationRequest
 from web.domains.country.models import Country, CountryGroup
@@ -9,6 +11,8 @@ from web.domains.user.models import User
 
 
 class ExportApplicationType(models.Model):
+    CERT_FREE_SALE = 1
+    CERT_MANUFACTURE = 2
 
     is_active = models.BooleanField(blank=False, null=False, default=True)
     type_code = models.CharField(max_length=30, blank=False, null=False)
@@ -26,6 +30,12 @@ class ExportApplicationType(models.Model):
         null=True,
         related_name="manufacture_export_application_types",
     )
+
+    def __str__(self):
+        return f"{self.type}"
+
+    class Meta:
+        ordering = ("type",)
 
 
 class ExportApplication(models.Model):
@@ -57,7 +67,9 @@ class ExportApplication(models.Model):
     DECISIONS = ((REFUSE, "Refuse"), (APPROVE, "Approve"))
 
     is_active = models.BooleanField(blank=False, null=False, default=True)
-    status = models.CharField(max_length=30, choices=STATUSES, blank=False, null=False)
+    status = models.CharField(
+        max_length=30, choices=STATUSES, blank=False, null=False, default=IN_PROGRESS
+    )
     reference = models.CharField(max_length=50, blank=True, null=True)
     application_type = models.ForeignKey(
         ExportApplicationType, on_delete=models.PROTECT, blank=False, null=False
@@ -110,3 +122,21 @@ class ExportApplication(models.Model):
         related_name="contact_export_applications",
     )
     countries = models.ManyToManyField(Country)
+    case_notes = models.ManyToManyField(CaseNote)
+
+
+class CertificateOfManufactureApplication(ExportApplication):
+    is_pesticide_on_free_sale_uk = models.BooleanField(null=True)
+    is_manufacturer = models.BooleanField(null=True)
+
+    product_name = models.CharField(max_length=1000, blank=False)
+    chemical_name = models.CharField(max_length=500, blank=False)
+    manufacturing_process = models.TextField(max_length=4000, blank=False)
+
+
+class ExportApplicationProcess(Process):
+    export_application = models.OneToOneField(
+        ExportApplication, null=False, on_delete=models.PROTECT
+    )
+
+    # TODO: add flags/whatever as needed
