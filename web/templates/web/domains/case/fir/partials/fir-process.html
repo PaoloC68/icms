@@ -92,4 +92,22 @@
 
   {% endif %}
 
+  {% if fir.closed_datetime %}
+
+  <div class="row">
+    <div class="three columns" >
+      <label class="prompt west">Closed Date</label>
+    </div>
+    <div class="three columns" >
+      <span class="text-widget ">{{ fir.closed_datetime }}</span>
+    </div>
+    <div class="three columns" >
+      <label>Closed By</label>
+    </div>
+    <div class="three columns" >
+      <span>{{ fir.closed_by}}</span>
+    </div>
+  </div>
+
+  {% endif %}
 </div>

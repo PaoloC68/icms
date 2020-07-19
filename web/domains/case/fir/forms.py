@@ -1,10 +1,9 @@
 import structlog as logging
-from django import forms
 from django.forms.widgets import Textarea
 from django.utils import timezone
 
 from web.domains.case.fir.models import FurtherInformationRequest
-from web.forms import ModelDisplayForm, ModelEditForm
+from web.forms import ModelEditForm
 
 logger = logging.getLogger(__name__)
 
@@ -43,42 +42,6 @@ class FurtherInformationRequestForm(ModelEditForm):
                 <br>
                 E.g. <span style="white-space:nowrap;">john@smith.com <strong>;</strong> \
                 jane@smith.com</span>"""
-        }
-
-
-class FurtherInformationRequestDisplayForm(FurtherInformationRequestForm, ModelDisplayForm):
-
-    requested_datetime = forms.CharField(
-        label=FurtherInformationRequestForm.Meta.labels["requested_datetime"]
-    )
-    requested_by = forms.CharField()
-
-    def get_top_buttons(self):
-        """
-        buttons to show on the form's top row
-        """
-        if self.instance.status == FurtherInformationRequest.DRAFT:
-            return ["edit"]
-
-        return []
-
-    def get_bottom_buttons(self):
-        """
-        buttons to show on the form's bottom row
-        """
-        if self.instance.status == FurtherInformationRequest.OPEN:
-            return ["withdraw"]
-
-        return []
-
-    class Meta(FurtherInformationRequestForm.Meta):
-        config = {
-            "requested_datetime": {
-                "padding": {"right": None},
-                "label": {"cols": "three"},
-                "input": {"cols": "two"},
-            },
-            "requested_by": {"label": {"cols": "two"}, "input": {"cols": "two"},},
         }
 
 

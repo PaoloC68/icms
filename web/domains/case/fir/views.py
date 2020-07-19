@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db import transaction
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render, reverse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import View
 from django.views.generic.edit import FormView
@@ -366,3 +367,10 @@ class FurtherInformationRequestResponseView(UpdateProcessView):
 
 class FurtherInformationRequestReviewView(UpdateProcessView):
     template_name = "web/domains/case/fir/review.html"
+
+    def form_valid(self, form):
+        fir = form.instance.further_information_request
+        fir.closed_datetime = timezone.now()
+        fir.closed_by = self.request.user
+        fir.save()
+        return super().form_valid(form)
