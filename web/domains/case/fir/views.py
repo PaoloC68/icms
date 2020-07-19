@@ -2,16 +2,22 @@
 # -*- coding: utf-8 -*-
 import structlog as logging
 from django.conf import settings
-from django.http import HttpResponseBadRequest
-from django.shortcuts import redirect, render
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.db import transaction
+from django.http import Http404, HttpResponseBadRequest
+from django.shortcuts import get_object_or_404, redirect, render, reverse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import View
+from django.views.generic.edit import FormView
 from s3chunkuploader.file_handler import s3_client
+from viewflow.flow.views import FlowMixin, UpdateProcessView
+from viewflow.models import Process
 
 from web.domains.case.access.models import (
     AccessRequest,
-    ImporterAccessRequestProcess,
     FurtherInformationRequest,
+    ImporterAccessRequestProcess,
 )
 from web.domains.file.models import File
 from web.domains.template.models import Template
@@ -20,7 +26,7 @@ from web.utils.s3upload import InvalidFileException, S3UploadService
 from web.utils.virus import ClamAV, InfectedFileException
 from web.views.mixins import PostActionMixin
 
-from .forms import FurtherInformationRequestDisplayForm, FurtherInformationRequestForm
+from . import forms
 
 logger = logging.getLogger(__name__)
 
@@ -114,15 +120,15 @@ class FurtherInformationRequestView(PostActionMixin, View):
         """
         Saves the FIR being editted by the user
 
-        user is redirected to list view if no file actions are performed, otherwise user is redirected
-        to edit view
+        user is redirected to list view if no file actions are performed,
+        otherwise user is redirected to edit view
 
         Params:
             process_id - Access Request id
         """
 
         model = FurtherInformationRequest.objects.get(pk=request.POST["id"])
-        form = FurtherInformationRequestForm(data=request.POST, instance=model)
+        form = forms.FurtherInformationRequestForm(data=request.POST, instance=model)
 
         if not form.is_valid():
             return render(
@@ -149,8 +155,8 @@ class FurtherInformationRequestView(PostActionMixin, View):
 
     def new(self, request, process_id):
         """
-        Creates a new FIR and associates it with the current access request then display the FIR form
-        so the user can edit data
+        Creates a new FIR and associates it with the current access request,
+        then display the FIR form so the user can edit data
 
         Params:
             process_id - Access Request id
@@ -241,21 +247,24 @@ class FurtherInformationRequestView(PostActionMixin, View):
 
     def create_display_or_edit_form(self, fir, selected_fir, form):
         """
-        This function either returns an Further Information Request (FIR) form, or a read only version of it.
+        This function either returns an Further Information Request (FIR) form,
+        or a read only version of it.
 
         By default returns a read only version of the FIR form (for display puposes).
 
-        If `fir.id` is is the same as `selected_fir` then a "editable" version of the form is returned
+        If `fir.id` is is the same as `selected_fir` then a "editable" version of the
+        form is returned
 
         Params:
             fir - FurtherInformationRequest model
-            selected_fir - id of the FIR the user is editing (or None)
-            form - the form the user has submitted (or None, if present the form is returned instead of creating a new one)
+            selected_fir - id of the FIR the user is editing (or None) form -
+            the form the user has submitted (or None, if present the form  is returned
+            instead of creating a new one)
         """
         if selected_fir and fir.id == selected_fir:
-            return form if form else FurtherInformationRequestForm(instance=fir)
+            return form if form else forms.FurtherInformationRequestForm(instance=fir)
 
-        return FurtherInformationRequestDisplayForm(
+        return forms.FurtherInformationRequestDisplayForm(
             instance=fir,
             initial={
                 "requested_datetime": fir.date_created_formatted().upper(),
@@ -270,7 +279,8 @@ class FurtherInformationRequestView(PostActionMixin, View):
         Params:
             process_id - Access Request id
             selected_fir - id of the FIR the user is editing (or None)
-            form - the form the user has submitted (or None, if present the form is returned instead of creating a new one)
+            form - the form the user has submitted (or None, if present the
+            form is returned instead of creating a new one)
         """
         process = ImporterAccessRequestProcess.objects.get(pk=process_id)
         items = (
@@ -289,3 +299,72 @@ class FurtherInformationRequestView(PostActionMixin, View):
                 "process": process,
             },
         }
+
+
+class FurtherInformationRequestStartView(PermissionRequiredMixin, FormView):
+    template_name = "web/domains/case/fir/start.html"
+    form_class = forms.FurtherInformationRequestForm
+
+    def _get_parent_process(self):
+        """
+            Resolve parent process from url parameter parent_process_pk
+
+            Resolves concrete Process model. E.g. ImporterAccessRequestProcess,
+            ExporterAccessRequestProcess, etc
+        """
+        kwargs = self.request.resolver_match.kwargs
+        parent_process_pk = kwargs.get("parent_process_pk")
+        base_process = get_object_or_404(Process, pk=parent_process_pk)
+        parent_process = get_object_or_404(
+            base_process.flow_class.process_class, pk=parent_process_pk
+        )
+        # If parent process is finished no new FIR is to be allowed
+        if parent_process.finished:
+            raise Http404("Parent process not found")
+        return parent_process
+
+    def has_permission(self):
+        """
+            Check parent process for permission
+        """
+        parent_process = self._get_parent_process()
+        return parent_process.get_fir_starter_permission()
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context["parent_process"] = self._get_parent_process()
+        return context
+
+    @transaction.atomic
+    def form_valid(self, *args, **kwargs):
+        """
+            If the form is valid set parent process and start FIR process
+        """
+        fir = self.get_form().save()
+        fir.requested_by = self.request.user
+        fir.save()
+        # Lazy import as flows.py imports views.py as well, causing a circular
+        # dependency
+        from .flows import FurtherInformationRequestFlow
+
+        # Start a new FIR flow
+        FurtherInformationRequestFlow.request.run(self._get_parent_process(), fir)
+        return redirect(reverse("workbasket"))
+
+
+class FurtherInformationRequestResponseView(FlowMixin, FormView):
+    template_name = "web/domains/case/fir/respond.html"
+    form_class = forms.FurtherInformationRequestResponseForm
+
+    def form_valid(self, form):
+        """
+            Set response information
+        """
+        fir = form.instance
+        fir.response_datetime = timezone.now()
+        fir.response_by = self.request.user
+        return super().form_valid(form)
+
+
+class FurtherInformationRequestReviewView(UpdateProcessView):
+    template_name = "web/domains/case/fir/review.html"

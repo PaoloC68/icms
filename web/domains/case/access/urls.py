@@ -3,11 +3,11 @@
 
 import structlog as logging
 from django.urls import include, path
+
+from web.flows import ApprovalRequestFlow, ExporterAccessRequestFlow, ImporterAccessRequestFlow
 from web.viewflow.viewset import FlowViewSet
 
-from web.domains.case.fir.views import FurtherInformationRequestView
-from web.flows import ImporterAccessRequestFlow, ExporterAccessRequestFlow, ApprovalRequestFlow
-
+from ..fir.views import FurtherInformationRequestStartView
 from . import views
 
 logger = logging.getLogger(__name__)
@@ -19,9 +19,11 @@ approval_request_urls = FlowViewSet(ApprovalRequestFlow).urls
 app_name = "access"
 
 urlpatterns = [
-    path("<process_id>/fir/", FurtherInformationRequestView.as_view(), name="fir"),
     path("importer/", include((importer_access_request_urls, "importer"))),
     path("exporter/", include((exporter_access_request_urls, "exporter"))),
     path("approval/", include((approval_request_urls, "approval"))),
     path("requested/", views.AccessRequestCreatedView.as_view(), name="requested"),
+    path(
+        "<parent_process_pk>/fir/", FurtherInformationRequestStartView.as_view(), name="access-fir"
+    ),
 ]

@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from viewflow.models import Process
 
 from web.domains.file.models import File
 from web.domains.user.models import User
@@ -77,3 +80,16 @@ class FurtherInformationRequest(models.Model):
 
     def has_deleted_files(self):
         return self.files.all().filter(is_active=False).count() > 0
+
+
+class FurtherInformationRequestProcess(Process):
+    """
+        Further information request process
+    """
+
+    further_information_request = models.ForeignKey(
+        FurtherInformationRequest, on_delete=models.CASCADE
+    )
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    parent_process = GenericForeignKey("content_type", "object_id")
