@@ -1,11 +1,30 @@
+import structlog as logging
 from django import forms
 from django.forms.widgets import Textarea
+from django.utils import timezone
 
 from web.domains.case.fir.models import FurtherInformationRequest
 from web.forms import ModelDisplayForm, ModelEditForm
 
+logger = logging.getLogger(__name__)
+
 
 class FurtherInformationRequestForm(ModelEditForm):
+    def __init__(self, requested_by, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.requested_by = requested_by
+
+    def save(self, commit=True):
+        """
+            Set request status/date before save
+        """
+        fir = super().save(commit=False)
+        fir.status = FurtherInformationRequest.OPEN
+        fir.requested_by = self.requested_by
+        if commit:
+            fir.save()
+        return fir
+
     class Meta:
         model = FurtherInformationRequest
         fields = ["request_subject", "email_cc_address_list", "request_detail"]
@@ -22,7 +41,8 @@ class FurtherInformationRequestForm(ModelEditForm):
                 Use a semicolon (<strong>;</strong>) to seperate multiple addresses.
                 <br>
                 <br>
-                E.g. <span style="white-space:nowrap;">john@smith.com <strong>;</strong> jane@smith.com</span>"""
+                E.g. <span style="white-space:nowrap;">john@smith.com <strong>;</strong> \
+                jane@smith.com</span>"""
         }
 
 
@@ -63,6 +83,22 @@ class FurtherInformationRequestDisplayForm(FurtherInformationRequestForm, ModelD
 
 
 class FurtherInformationRequestResponseForm(ModelEditForm):
+    def __init__(self, response_by, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.response_by = response_by
+
+    def save(self, commit=True):
+        """
+            Set response status/date before save
+        """
+        fir = super().save(commit=False)
+        fir.response_datetime = timezone.now()
+        fir.status = FurtherInformationRequest.RESPONDED
+        fir.response_by = self.response_by
+        if commit:
+            fir.save()
+        return fir
+
     class Meta:
         model = FurtherInformationRequest
         fields = [

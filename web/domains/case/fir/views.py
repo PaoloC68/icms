@@ -6,12 +6,11 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db import transaction
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render, reverse
-from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import View
 from django.views.generic.edit import FormView
 from s3chunkuploader.file_handler import s3_client
-from viewflow.flow.views import FlowMixin, UpdateProcessView
+from viewflow.flow.views import UpdateProcessView
 from viewflow.models import Process
 
 from web.domains.case.access.models import (
@@ -335,14 +334,15 @@ class FurtherInformationRequestStartView(PermissionRequiredMixin, FormView):
         context["parent_process"] = self._get_parent_process()
         return context
 
+    def get_form(self):
+        return self.form_class(self.request.user, data=self.request.POST or None)
+
     @transaction.atomic
-    def form_valid(self, *args, **kwargs):
+    def form_valid(self, form):
         """
             If the form is valid set parent process and start FIR process
         """
-        fir = self.get_form().save()
-        fir.requested_by = self.request.user
-        fir.save()
+        fir = form.save()
         # Lazy import as flows.py imports views.py as well, causing a circular
         # dependency
         from .flows import FurtherInformationRequestFlow
@@ -352,18 +352,16 @@ class FurtherInformationRequestStartView(PermissionRequiredMixin, FormView):
         return redirect(reverse("workbasket"))
 
 
-class FurtherInformationRequestResponseView(FlowMixin, FormView):
+class FurtherInformationRequestResponseView(UpdateProcessView):
     template_name = "web/domains/case/fir/respond.html"
     form_class = forms.FurtherInformationRequestResponseForm
 
-    def form_valid(self, form):
-        """
-            Set response information
-        """
-        fir = form.instance
-        fir.response_datetime = timezone.now()
-        fir.response_by = self.request.user
-        return super().form_valid(form)
+    def get_form(self):
+        return self.form_class(
+            self.request.user,
+            instance=self.activation.process.further_information_request,
+            data=self.request.POST or None,
+        )
 
 
 class FurtherInformationRequestReviewView(UpdateProcessView):

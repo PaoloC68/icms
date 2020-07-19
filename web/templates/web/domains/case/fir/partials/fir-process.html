@@ -63,6 +63,8 @@
 
   {% if fir.response_datetime %}
 
+  <h5>Response</h5>
+
   <div class="row">
     <div class="three columns" >
       <label class="prompt west">Response Date</label>
@@ -77,6 +79,17 @@
       <span>{{ fir.response_by}}</span>
     </div>
   </div>
+
+  <div class="row">
+    <div class="three columns" >
+      <label>Response Detail</label>
+    </div>
+    <div class="six columns" >
+      <span>{{fir.response_detail}}</span>
+    </div>
+    <div class="three columns"></div>
+  </div>
+
   {% endif %}
 
 </div>
