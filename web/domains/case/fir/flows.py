@@ -33,7 +33,7 @@ class FurtherInformationRequestFlow(Flow):
 
     """
 
-    process_template = "web/domains/case/fir/partials/fir-process.html"
+    process_template = "web/domains/case/fir/partials/process.html"
     process_class = models.FurtherInformationRequestProcess
 
     request = flow.StartFunction(this.start_fir).Next(this.notify_contacts)

@@ -1,0 +1,17 @@
+<ul class="menu-out">
+  <h4>Access Request</h4>
+  <li>
+    <a href=""
+       class="current-page"
+       >
+       Access Request
+    </a>
+  </li>
+  <li>
+    {% set total_ifr = activation.process.access_request.further_information_requests.exclude(status="DELETED")|length %}
+    {% set open_fir = activation.process.access_request.further_information_requests.filter(status="OPEN")|length %}
+    <a href=""
+       class="{% if route == 'fir' %}current-page{% endif %}">
+      Further Information Requests ({{ "%s/%s" % (open_fir, total_ifr) }})
+    </a>
+</ul>

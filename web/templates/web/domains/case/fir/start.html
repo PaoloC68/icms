@@ -15,6 +15,10 @@
     {{ fields.field(form.email_cc_address_list) }}
     {{ fields.field(form.request_detail) }}
 
+    {% with fir=form.instance %}
+      {% include "web/domains/case/fir/partials/file-upload.html" %}
+    {% endwith %}
+
     <div class="clearBoth"></div>
     <div class="container">
       <div class="row">

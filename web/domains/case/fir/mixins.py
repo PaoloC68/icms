@@ -27,3 +27,21 @@ class FurtherInformationProcessMixin(object):
             Returns permission required to start/review/close fir
         """
         raise NotImplementedError
+
+    def get_fir_template(self):
+        """
+            Returns template to populate initial request subject  and request detail
+        """
+        raise NotImplementedError
+
+    def render_template_content(self, template, request):
+        """
+            Render template content with placeholder variables
+        """
+        raise NotImplementedError
+
+    def render_template_title(self, template, request):
+        """
+            Renders template title  with placeholder variables
+        """
+        raise NotImplementedError

@@ -63,7 +63,7 @@ def assign_review_task(activation):
 
 
 class ImporterAccessRequestFlow(Flow):
-    process_template = "web/domains/case/access/partials/access-request-display.html"
+    process_template = "web/domains/case/access/partials/process.html"
     process_class = models.ImporterAccessRequestProcess
 
     # Performed by importers or their agents
@@ -121,7 +121,7 @@ class ImporterAccessRequestFlow(Flow):
 
 
 class ExporterAccessRequestFlow(Flow):
-    process_template = "web/domains/case/access/partials/access-request-display.html"
+    process_template = "web/domains/case/access/partials/process.html"
     process_class = models.ExporterAccessRequestProcess
 
     # Performed by exporters or their agents

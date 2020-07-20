@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import View
 from django.views.generic.edit import FormView
 from s3chunkuploader.file_handler import s3_client
-from viewflow.flow.views import UpdateProcessView
+from viewflow.flow.views import ProcessListView, UpdateProcessView
 from viewflow.models import Process
 
 from web.domains.case.access.models import (
@@ -29,6 +29,23 @@ from web.views.mixins import PostActionMixin
 from . import forms
 
 logger = logging.getLogger(__name__)
+
+
+def _get_parent_process(request):
+    """
+        Resolve parent process from url parameter parent_process_pk
+
+        Resolves concrete Process model. E.g. ImporterAccessRequestProcess,
+        ExporterAccessRequestProcess, etc
+    """
+    kwargs = request.resolver_match.kwargs
+    parent_process_pk = kwargs.get("parent_process_pk")
+    base_process = get_object_or_404(Process, pk=parent_process_pk)
+    parent_process = get_object_or_404(base_process.flow_class.process_class, pk=parent_process_pk)
+    # If parent process is finished no new FIR is to be allowed
+    if parent_process.finished:
+        raise Http404("Parent process not found")
+    return parent_process
 
 
 class FurtherInformationRequestView(PostActionMixin, View):
@@ -301,55 +318,74 @@ class FurtherInformationRequestView(PostActionMixin, View):
         }
 
 
+class FurtherInformationRequestListView(ProcessListView):
+    """
+        List of FIRs for given parent process
+    """
+
+    def __init__(self, *args, **kwargs):
+        logger.debug("Iniiiiiiiiiiiiiiiiiiiiit")
+        # Lazy import as flows.py imports views.py as well, causing a circular
+        # dependency
+        from .flows import FurtherInformationRequestFlow
+
+        super().__init__(*args, flow_class=FurtherInformationRequestFlow, **kwargs)
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Filter by parent process
+        queryset = queryset.filter(parent_process=_get_parent_process(self.request))
+        return queryset
+
+
 class FurtherInformationRequestStartView(PermissionRequiredMixin, FormView):
+    """
+    Creates a new FIR and associates it with the parent process,
+    then display FIR form for new FIR
+    """
+
     template_name = "web/domains/case/fir/start.html"
     form_class = forms.FurtherInformationRequestForm
-
-    def _get_parent_process(self):
-        """
-            Resolve parent process from url parameter parent_process_pk
-
-            Resolves concrete Process model. E.g. ImporterAccessRequestProcess,
-            ExporterAccessRequestProcess, etc
-        """
-        kwargs = self.request.resolver_match.kwargs
-        parent_process_pk = kwargs.get("parent_process_pk")
-        base_process = get_object_or_404(Process, pk=parent_process_pk)
-        parent_process = get_object_or_404(
-            base_process.flow_class.process_class, pk=parent_process_pk
-        )
-        # If parent process is finished no new FIR is to be allowed
-        if parent_process.finished:
-            raise Http404("Parent process not found")
-        return parent_process
 
     def has_permission(self):
         """
             Check parent process for permission
         """
-        parent_process = self._get_parent_process()
-        return parent_process.get_fir_starter_permission()
+        return _get_parent_process(self.request).get_fir_starter_permission()
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context["parent_process"] = self._get_parent_process()
+        context["parent_process"] = _get_parent_process(self.request)
         return context
 
     def get_form(self):
-        return self.form_class(self.request.user, data=self.request.POST or None)
+        request = self.request
+        parent_process = _get_parent_process(self.request)
+        if request.POST:
+            return self.form_class(self.request.user, data=request.POST)
+
+        # initial request
+        template = parent_process.get_fir_template()
+        initial = {
+            "request_detail": parent_process.render_template_content(template, self.request),
+            "request_subject": parent_process.render_template_title(template, self.request),
+        }
+        logger.debug(initial)
+        return self.form_class(self.request.user, initial=initial)
 
     @transaction.atomic
     def form_valid(self, form):
         """
             If the form is valid set parent process and start FIR process
         """
-        fir = form.save()
         # Lazy import as flows.py imports views.py as well, causing a circular
         # dependency
         from .flows import FurtherInformationRequestFlow
 
+        fir = form.save()
+
         # Start a new FIR flow
-        FurtherInformationRequestFlow.request.run(self._get_parent_process(), fir)
+        FurtherInformationRequestFlow.request.run(_get_parent_process(self.request), fir)
         return redirect(reverse("workbasket"))
 
 

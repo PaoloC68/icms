@@ -6,10 +6,32 @@ from viewflow.models import Process
 from web.domains.case.fir.models import FurtherInformationRequest
 from web.domains.exporter.models import Exporter
 from web.domains.importer.models import Importer
+from web.domains.template.models import Template
 from web.domains.user.models import User
 
 from ..fir.mixins import FurtherInformationProcessMixin
 from .managers import AccessRequestQuerySet
+
+
+def _get_fir_template():
+    """
+        Fetch template for initial FIR request details
+    """
+    return Template.objects.get(template_code="IAR_RFI_EMAIL", is_active=True)
+
+
+def _render_template_content(request, template, access_request):
+    return template.get_content(
+        {
+            "CURRENT_USER_NAME": request.user.full_name,
+            "REQUESTER_NAME": access_request.submitted_by.full_name,
+        }
+    )
+
+
+def _render_template_title(template, access_request):
+    # TODO: IAR or EAR
+    return template.get_title({"REQUEST_REFERENCE": access_request.id})
 
 
 class AccessRequest(models.Model):
@@ -123,6 +145,7 @@ class ImporterAccessRequestProcess(FurtherInformationProcessMixin, Process):
 
     IMP_CASE_OFFICER = "web.IMP_CASE_OFFICER"  # case officer permission
     IMP_AGENT_APPROVER = "web.IMP_AGENT_APPROVER"  # importer permission for fir response
+    FIR_TEMPLATE_CODE = "IAR_RFI_EMAIL"
 
     access_request = models.ForeignKey(AccessRequest, null=True, on_delete=models.SET_NULL)
     approval_required = models.BooleanField(blank=False, null=False, default=False)
@@ -139,6 +162,15 @@ class ImporterAccessRequestProcess(FurtherInformationProcessMixin, Process):
     def get_fir_response_permission(self):
         return self.IMP_AGENT_APPROVER
 
+    def get_fir_template(self):
+        return _get_fir_template()
+
+    def render_template_content(self, template, request):
+        return _render_template_content(request, template, self.access_request)
+
+    def render_template_title(self, template, request):
+        return _render_template_title(template, self.access_request)
+
 
 class ExporterAccessRequestProcess(FurtherInformationProcessMixin, Process):
     # Importer and exporter access request flows can't share
@@ -147,6 +179,7 @@ class ExporterAccessRequestProcess(FurtherInformationProcessMixin, Process):
 
     IMP_CERT_CASE_OFFICER = "web.IMP_CERT_CASE_OFFICER"  # case officer permission
     IMP_CERT_AGENT_APPROVER = "web.IMP_CERT_AGENT_APPROVER"  # exporter permission for fir response
+    FIR_TEMPLATE_CODE = "IAR_RFI_EMAIL"
 
     access_request = models.ForeignKey(AccessRequest, null=True, on_delete=models.SET_NULL)
     approval_required = models.BooleanField(blank=False, null=False, default=False)
@@ -162,3 +195,12 @@ class ExporterAccessRequestProcess(FurtherInformationProcessMixin, Process):
 
     def get_fir_response_permission(self):
         return self.IMP_CERT_AGENT_APPROVER
+
+    def get_fir_template(self):
+        return _get_fir_template()
+
+    def render_template_content(self, template, request):
+        return _render_template_content(request, template, self.access_request)
+
+    def render_template_title(self, template, request):
+        return _render_template_title(template, self.access_request)

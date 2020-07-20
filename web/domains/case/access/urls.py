@@ -7,7 +7,7 @@ from django.urls import include, path
 from web.flows import ApprovalRequestFlow, ExporterAccessRequestFlow, ImporterAccessRequestFlow
 from web.viewflow.viewset import FlowViewSet
 
-from ..fir.views import FurtherInformationRequestStartView
+from ..fir.views import FurtherInformationRequestStartView, FurtherInformationRequestListView
 from . import views
 
 logger = logging.getLogger(__name__)
@@ -24,6 +24,13 @@ urlpatterns = [
     path("approval/", include((approval_request_urls, "approval"))),
     path("requested/", views.AccessRequestCreatedView.as_view(), name="requested"),
     path(
-        "<parent_process_pk>/fir/", FurtherInformationRequestStartView.as_view(), name="access-fir"
+        "<parent_process_pk>/fir/request/",
+        FurtherInformationRequestStartView.as_view(),
+        name="access-fir-new",
+    ),
+    path(
+        "<parent_process_pk>/fir/list/",
+        FurtherInformationRequestListView.as_view(),
+        name="access-fir-list",
     ),
 ]
