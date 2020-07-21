@@ -1,0 +1,31 @@
+<fieldset>
+    <legend><strong>FIR {{ idx }} </strong></legend>
+
+    <ul class="menu-out case-item-title-actions flow-across">
+      <li>
+          <a href="" class="small-button button icon-pencil">Edit</a>
+      <li>
+    </ul>
+
+    <div class="container setoutForm">
+
+      {% with process = fir %}
+        {% include "web/domains/case/fir/partials/process.html" %}
+      {% endwith %}
+
+      TODO:Uploaded files
+
+      <div class="row">
+        <div class="three columns"></div>
+        <div class="six columns">
+          <ul class="menu-out flow-across">
+            <li>
+              <!-- TODO: Delete action  --> 
+              <button type="button" class="button">Delete</button>
+              <li>
+          </ul>
+        </div>
+        <div class="three columns"></div>
+      </div>
+    </div>
+</fieldset>

@@ -10,8 +10,9 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import View
 from django.views.generic.edit import FormView
+from django.views.generic.list import ListView
 from s3chunkuploader.file_handler import s3_client
-from viewflow.flow.views import ProcessListView, UpdateProcessView
+from viewflow.flow.views import UpdateProcessView
 from viewflow.models import Process
 
 from web.domains.case.access.models import (
@@ -26,7 +27,7 @@ from web.utils.s3upload import InvalidFileException, S3UploadService
 from web.utils.virus import ClamAV, InfectedFileException
 from web.views.mixins import PostActionMixin
 
-from . import forms
+from . import forms, models
 
 logger = logging.getLogger(__name__)
 
@@ -318,24 +319,26 @@ class FurtherInformationRequestView(PostActionMixin, View):
         }
 
 
-class FurtherInformationRequestListView(ProcessListView):
+class FurtherInformationRequestListView(ListView):
     """
         List of FIRs for given parent process
     """
 
-    def __init__(self, *args, **kwargs):
-        logger.debug("Iniiiiiiiiiiiiiiiiiiiiit")
-        # Lazy import as flows.py imports views.py as well, causing a circular
-        # dependency
-        from .flows import FurtherInformationRequestFlow
-
-        super().__init__(*args, flow_class=FurtherInformationRequestFlow, **kwargs)
+    template_name = "web/domains/case/fir/list.html"
+    context_object_name = "fir_list"
 
     def get_queryset(self):
-        queryset = super().get_queryset()
         # Filter by parent process
-        queryset = queryset.filter(parent_process=_get_parent_process(self.request))
-        return queryset
+        parent_process = _get_parent_process(self.request)
+        return parent_process.fir_set.all()
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context["parent_process"] = _get_parent_process(self.request)
+        return context
+
+    class Meta:
+        model = models.FurtherInformationRequestProcess
 
 
 class FurtherInformationRequestStartView(PermissionRequiredMixin, FormView):

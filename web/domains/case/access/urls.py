@@ -26,11 +26,11 @@ urlpatterns = [
     path(
         "<parent_process_pk>/fir/request/",
         FurtherInformationRequestStartView.as_view(),
-        name="access-fir-new",
+        name="fir-new",
     ),
     path(
         "<parent_process_pk>/fir/list/",
         FurtherInformationRequestListView.as_view(),
-        name="access-fir-list",
+        name="fir-list",
     ),
 ]
