@@ -72,6 +72,9 @@ class FurtherInformationRequest(models.Model):
     )
     files = models.ManyToManyField(File, blank=True)
 
+    def is_draft(self):
+        return self.status == self.DRAFT
+
     def date_created_formatted(self):
         """
             returns a formatted datetime
@@ -93,3 +96,17 @@ class FurtherInformationRequestProcess(Process):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     parent_process = GenericForeignKey("content_type", "object_id")
+
+    def edit_task(self):
+        """
+            Return complete request task of fir for editing draft FIRs
+        """
+        # Lazy import to prevent circular dependency
+        from .flows import FurtherInformationRequestFlow
+
+        task = (
+            self.active_tasks()
+            .filter(flow_task=FurtherInformationRequestFlow.complete_request)
+            .last()
+        )
+        return task

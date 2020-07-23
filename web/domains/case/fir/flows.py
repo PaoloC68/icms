@@ -33,10 +33,24 @@ class FurtherInformationRequestFlow(Flow):
 
     """
 
+    DRAFT = models.FurtherInformationRequest.DRAFT
     process_template = "web/domains/case/fir/partials/process.html"
     process_class = models.FurtherInformationRequestProcess
 
-    request = flow.StartFunction(this.start_fir).Next(this.notify_contacts)
+    request = flow.StartFunction(this.start_fir).Next(this.check_draft)
+
+    # If draft create a task for fir requester to finish fir request
+    check_draft = (
+        flow.If(cond=lambda activation: activation.process.further_information_request.is_draft())
+        .Then(this.complete_request)
+        .Else(this.notify_contacts)
+    )
+
+    complete_request = (
+        View(views.FutherInformationRequestEditView)
+        .Next(this.notify_contacts)
+        .Assign(this.request.owner)
+    )
 
     notify_contacts = flow.Handler(send_fir_email).Next(this.respond)
 
@@ -59,8 +73,8 @@ class FurtherInformationRequestFlow(Flow):
 
     @method_decorator(flow.flow_start_func)
     def start_fir(self, activation, parent_process, further_information_request):
-        logger.debug("Starting fir", parent_process=parent_process)
         activation.prepare()
         activation.process.parent_process = parent_process
+        activation.task.owner = further_information_request.requested_by
         activation.process.further_information_request = further_information_request
         activation.done()

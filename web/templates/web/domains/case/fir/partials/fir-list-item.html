@@ -1,17 +1,18 @@
 <fieldset>
     <legend><strong>FIR {{ idx }} </strong></legend>
 
-    <ul class="menu-out case-item-title-actions flow-across">
-      <li>
-          <a href="" class="small-button button icon-pencil">Edit</a>
-      <li>
-    </ul>
+      {% set edit_task = process.edit_task() %}
+      {% if edit_task %}
+        <ul class="menu-out case-item-title-actions flow-across">
+          <li>
+            <a href="{{flowurl(request, edit_task, url_name='execute', namespace='fir')}}" class="small-button button icon-pencil">Edit</a>
+          <li>
+        </ul>
+      {% endif %}
 
     <div class="container setoutForm">
 
-      {% with process = fir %}
-        {% include "web/domains/case/fir/partials/process.html" %}
-      {% endwith %}
+      {% include "web/domains/case/fir/partials/process.html" %}
 
       TODO:Uploaded files
 

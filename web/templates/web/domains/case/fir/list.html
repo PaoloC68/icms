@@ -18,7 +18,7 @@
         </ul>
     </div>
 
-    {% for fir in fir_list.all() %}
+    {% for process in fir_list.all() %}
         {% with idx=loop.index %}
             {% include "web/domains/case/fir/partials/fir-list-item.html" %}
         {% endwith %}

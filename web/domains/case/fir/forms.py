@@ -9,19 +9,35 @@ logger = logging.getLogger(__name__)
 
 
 class FurtherInformationRequestForm(ModelEditForm):
-    def __init__(self, requested_by, *args, **kwargs):
+    """
+        Request form for FIRs.
+
+        Takes an optional user keyword arg to set fir requested by
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
-        self.requested_by = requested_by
+
+    def _is_draft(self):
+        """
+        Check submitted data to determine if saving as draft
+        """
+        return "_save_draft" in self.data
 
     def save(self, commit=True):
         """
             Set request status/date before save
         """
+        # TODO: Skip form validations if saving as draft?
         fir = super().save(commit=False)
-        fir.status = FurtherInformationRequest.OPEN
-        fir.requested_by = self.requested_by
+        fir.requested_by = self.user
+        if not self._is_draft():
+            fir.status = FurtherInformationRequest.OPEN
+
         if commit:
             fir.save()
+
         return fir
 
     class Meta:

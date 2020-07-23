@@ -34,6 +34,12 @@ class FurtherInformationProcessMixin:
         """
         raise NotImplementedError
 
+    def get_process_namespace(self):
+        """
+            Returns namespace for process
+        """
+        raise NotImplementedError
+
     def render_template_content(self, template, request):
         """
             Render template content with placeholder variables

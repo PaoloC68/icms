@@ -173,6 +173,9 @@ class ImporterAccessRequestProcess(FurtherInformationProcessMixin, Process):
     def render_template_title(self, template, request):
         return _render_template_title(template, self.access_request)
 
+    def get_process_namespace(self):
+        return "access"
+
 
 class ExporterAccessRequestProcess(FurtherInformationProcessMixin, Process):
     # Importer and exporter access request flows can't share
@@ -207,3 +210,6 @@ class ExporterAccessRequestProcess(FurtherInformationProcessMixin, Process):
 
     def render_template_title(self, template, request):
         return _render_template_title(template, self.access_request)
+
+    def get_process_namespace(self):
+        return "access"
