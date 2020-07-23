@@ -1,15 +1,16 @@
 import datetime
 
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from viewflow.models import Process
 
-from web.domains.case.fir.models import FurtherInformationRequest
 from web.domains.exporter.models import Exporter
 from web.domains.importer.models import Importer
 from web.domains.template.models import Template
 from web.domains.user.models import User
 
 from ..fir.mixins import FurtherInformationProcessMixin
+from ..fir.models import FurtherInformationRequest, FurtherInformationRequestProcess
 from .managers import AccessRequestQuerySet
 
 
@@ -152,6 +153,7 @@ class ImporterAccessRequestProcess(FurtherInformationProcessMixin, Process):
 
     restart_approval = models.BooleanField(blank=False, null=False, default=False)
     re_link = models.BooleanField(blank=False, null=False, default=False)
+    fir_set = GenericRelation(FurtherInformationRequestProcess)
 
     def get_fir_response_team(self):
         return self.access_request.linked_importer
@@ -186,6 +188,7 @@ class ExporterAccessRequestProcess(FurtherInformationProcessMixin, Process):
 
     restart_approval = models.BooleanField(blank=False, null=False, default=False)
     re_link = models.BooleanField(blank=False, null=False, default=False)
+    fir_set = GenericRelation(FurtherInformationRequestProcess)
 
     def get_fir_response_team(self):
         return self.access_request.linked_exporter

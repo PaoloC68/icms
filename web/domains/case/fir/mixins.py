@@ -1,9 +1,4 @@
-from django.contrib.contenttypes.fields import GenericRelation
-from .models import FurtherInformationRequestProcess
-from viewflow.models import Process
-
-
-class FurtherInformationProcessMixin(Process):
+class FurtherInformationProcessMixin:
     """
         A process mixin to be used by processes that needs parallel Further Information
         Request flows
@@ -12,8 +7,6 @@ class FurtherInformationProcessMixin(Process):
         See: web/domains/case/access/models.py for example usage with
         Importer/Exporter Access Requests
     """
-
-    fir_set = GenericRelation(FurtherInformationRequestProcess)
 
     def get_fir_response_permission(self):
         """
@@ -52,6 +45,3 @@ class FurtherInformationProcessMixin(Process):
             Renders template title  with placeholder variables
         """
         raise NotImplementedError
-
-    class Meta:
-        abstract = True
