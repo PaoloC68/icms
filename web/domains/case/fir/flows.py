@@ -1,9 +1,11 @@
 import structlog as logging
+from django.dispatch import receiver
 from django.utils.decorators import method_decorator
 from viewflow import flow
 from viewflow.base import Flow, this
 
 from web.viewflow.nodes import View
+from web.viewflow.signals import flow_cancelled
 
 from . import models, views
 
@@ -78,3 +80,12 @@ class FurtherInformationRequestFlow(Flow):
         activation.task.owner = further_information_request.requested_by
         activation.process.further_information_request = further_information_request
         activation.done()
+
+
+@receiver(flow_cancelled, sender=FurtherInformationRequestFlow)
+def cancel_fir(sender, **kwargs):
+    logger.debug("Cancel received", sender=sender, kwargs=kwargs)
+    process = kwargs.get("process")
+    fir = process.further_information_request
+    fir.status = models.FurtherInformationRequest.DELETED
+    fir.save()

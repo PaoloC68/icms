@@ -2,11 +2,28 @@
     <legend><strong>FIR {{ idx }} </strong></legend>
 
       {% set edit_task = process.edit_task() %}
-      {% if edit_task %}
+      {% set cancel_url=flowurl(request, process, namespace='fir', url_name='action_cancel') %}
+
+      {% if process.further_information_request.is_draft() %}
         <ul class="menu-out case-item-title-actions flow-across">
+          {% if edit_task %}
           <li>
-            <a href="{{flowurl(request, edit_task, url_name='execute', namespace='fir')}}" class="small-button button icon-pencil">Edit</a>
+            <a 
+              href="{{flowurl(request, edit_task, url_name='execute', namespace='fir')}}" 
+              class="small-button button icon-pencil">
+              Edit
+            </a>
+          </li>
+          {% endif %}
+          
+          {% if cancel_url %}
           <li>
+            <a 
+              href="{{cancel_url}}" 
+              class="small-button button icon-bin">Delete</a>
+          </li>
+          {% endif %}
+
         </ul>
       {% endif %}
 
@@ -16,17 +33,5 @@
 
       TODO:Uploaded files
 
-      <div class="row">
-        <div class="three columns"></div>
-        <div class="six columns">
-          <ul class="menu-out flow-across">
-            <li>
-              <!-- TODO: Delete action  --> 
-              <button type="button" class="button">Delete</button>
-              <li>
-          </ul>
-        </div>
-        <div class="three columns"></div>
-      </div>
     </div>
 </fieldset>

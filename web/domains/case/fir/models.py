@@ -75,6 +75,11 @@ class FurtherInformationRequest(models.Model):
     def is_draft(self):
         return self.status == self.DRAFT
 
+    def delete(self):
+        self.status = self.DELETED
+        self.is_active = False
+        self.save()
+
     def date_created_formatted(self):
         """
             returns a formatted datetime
