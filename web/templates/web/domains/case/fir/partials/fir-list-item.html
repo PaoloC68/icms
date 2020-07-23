@@ -4,7 +4,7 @@
       {% set edit_task = process.edit_task() %}
       {% set cancel_url=flowurl(request, process, namespace='fir', url_name='action_cancel') %}
 
-      {% if process.further_information_request.is_draft() %}
+      {% if process.fir.is_draft() %}
         <ul class="menu-out case-item-title-actions flow-across">
           {% if edit_task %}
           <li>

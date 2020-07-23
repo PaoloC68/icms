@@ -328,7 +328,7 @@ class FurtherInformationRequestListView(ListView):
     def get_queryset(self):
         # Filter by parent process
         parent_process = get_parent_process(self.request)
-        return parent_process.fir_set.all()
+        return parent_process.fir_processes.all()
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
@@ -373,13 +373,16 @@ class FurtherInformationRequestStartView(PermissionRequiredMixin, FormView):
         }
         return self.form_class(user=self.request.user, initial=initial)
 
-    def start_process(self, fir):
+    def _start_process(self, fir):
         """
             Trigger FIR flow start task
         """
         # Lazy import as flows.py imports views.py as well, causing a circular
         # dependency
         from .flows import FurtherInformationRequestFlow
+
+        parent_process = get_parent_process(self.request)
+        parent_process.add_fir(fir)
 
         # Start a new FIR flow
         FurtherInformationRequestFlow.request.run(get_parent_process(self.request), fir)
@@ -390,7 +393,7 @@ class FurtherInformationRequestStartView(PermissionRequiredMixin, FormView):
             If the form is valid set parent process and start FIR process
         """
         fir = form.save()
-        self.start_process(fir)
+        self._start_process(fir)
         parent_process = get_parent_process(self.request)
 
         return redirect(
@@ -410,7 +413,7 @@ class FutherInformationRequestEditView(UpdateProcessView):
     form_class = forms.FurtherInformationRequestForm
 
     def get_form(self):
-        fir = self.activation.process.further_information_request
+        fir = self.activation.process.fir
         return self.form_class(instance=fir, data=self.request.POST or None)
 
     def get_success_url(self):

@@ -83,9 +83,13 @@ class FurtherInformationRequestFlow(Flow):
 
 
 @receiver(flow_cancelled, sender=FurtherInformationRequestFlow)
-def cancel_fir(sender, **kwargs):
+def delete_fir(sender, **kwargs):
+    """
+        Set FIR status to DELETED
+    """
     logger.debug("Cancel received", sender=sender, kwargs=kwargs)
     process = kwargs.get("process")
     fir = process.further_information_request
     fir.status = models.FurtherInformationRequest.DELETED
+    fir.is_active = False
     fir.save()

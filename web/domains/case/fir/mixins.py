@@ -51,3 +51,11 @@ class FurtherInformationProcessMixin:
             Renders template title  with placeholder variables
         """
         raise NotImplementedError
+
+    def add_fir(self, fir):
+        """
+            Invoked when a new FIR process is started
+
+            Parameter: fir - New Furhter Information Request
+        """
+        raise NotImplementedError

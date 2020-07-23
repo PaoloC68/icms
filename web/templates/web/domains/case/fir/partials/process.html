@@ -1,4 +1,4 @@
-{% set fir = process.further_information_request %}
+{% set fir = process.fir %}
 
 <h4>Further Information Request</h4>
 
@@ -10,7 +10,7 @@
     </div>
     <div class="six columns">
       <div class="status {{process.status|lower}}">
-        <div><span class="text-widget ">{{process.further_information_request.status}}</span></div>
+        <div><span class="text-widget ">{{fir.status}}</span></div>
       </div>
     </div>
     <div class="three columns"></div>

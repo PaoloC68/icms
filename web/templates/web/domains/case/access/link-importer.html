@@ -33,6 +33,12 @@
 {% endblock %}
 
 {% block sidebar %}
+
+  {# importer list sidebar #}
+  {{super}}
+
+  {% include "web/domains/case/access/partials/sidebar.html" %}
+
   {% set manage_url = flowurl(request, activation.task, url_name='detail') %}
   {% if manage_url %}
     </br>

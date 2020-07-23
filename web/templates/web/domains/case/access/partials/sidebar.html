@@ -1,17 +1,17 @@
 <ul class="menu-out">
+  {% set process = activation.process %}
+  {% set namespace = request.resolver_match.namespace  %}
+  {% set firs = process.fir_processes.filter(fir__is_active=True)  %}
   <h4>Access Request</h4>
   <li>
-    <a href=""
-       class="current-page"
-       >
-       Access Request
-    </a>
+    <a href="" class="current-page" >{{activation.flow_task}}</a>
   </li>
   <li>
-    {% set total_ifr = activation.process.access_request.further_information_requests.exclude(status="DELETED")|length %}
-    {% set open_fir = activation.process.access_request.further_information_requests.filter(status="OPEN")|length %}
-    <a href=""
+    {% set total_ifr = firs.count() %}
+    {% set open_fir = firs.filter(status="OPEN").count() %}
+    <a href="{{url(namespace ~ ':fir-list', args=(process.pk,))}}"
        class="{% if route == 'fir' %}current-page{% endif %}">
       Further Information Requests ({{ "%s/%s" % (open_fir, total_ifr) }})
     </a>
+  </li>
 </ul>

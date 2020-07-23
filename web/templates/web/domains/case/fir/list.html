@@ -4,6 +4,7 @@
 {% block context_header %}Manage {{parent_process}}{% endblock %}
 
 {% block main_content %}
+
    <div class="info-box info-box-info">
         <p>This screen is used to send a request to the access request applicant for further information.</p>
         <p>An email will be sent to the person who submitted the access request, who will need to log in and supply further information. When they submit their response, ILB admins will be notified via email.</p>
@@ -24,4 +25,9 @@
         {% endwith %}
     {% endfor%}
 
+{% endblock %}
+
+
+{% block sidebar %}
+  {% include "web/domains/case/fir/partials/sidebar.html" %}
 {% endblock %}

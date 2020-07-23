@@ -153,7 +153,7 @@ class ImporterAccessRequestProcess(FurtherInformationProcessMixin, Process):
 
     restart_approval = models.BooleanField(blank=False, null=False, default=False)
     re_link = models.BooleanField(blank=False, null=False, default=False)
-    fir_set = GenericRelation(FurtherInformationRequestProcess)
+    fir_processes = GenericRelation(FurtherInformationRequestProcess)
 
     def get_fir_response_team(self):
         return self.access_request.linked_importer
@@ -174,7 +174,10 @@ class ImporterAccessRequestProcess(FurtherInformationProcessMixin, Process):
         return _render_template_title(template, self.access_request)
 
     def get_process_namespace(self):
-        return "access"
+        return "access:importer"
+
+    def add_fir(self, fir):
+        self.access_request.further_information_requests.add(fir)
 
 
 class ExporterAccessRequestProcess(FurtherInformationProcessMixin, Process):
@@ -191,7 +194,7 @@ class ExporterAccessRequestProcess(FurtherInformationProcessMixin, Process):
 
     restart_approval = models.BooleanField(blank=False, null=False, default=False)
     re_link = models.BooleanField(blank=False, null=False, default=False)
-    fir_set = GenericRelation(FurtherInformationRequestProcess)
+    fir_processes = GenericRelation(FurtherInformationRequestProcess)
 
     def get_fir_response_team(self):
         return self.access_request.linked_exporter
@@ -212,4 +215,7 @@ class ExporterAccessRequestProcess(FurtherInformationProcessMixin, Process):
         return _render_template_title(template, self.access_request)
 
     def get_process_namespace(self):
-        return "access"
+        return "access:exporter"
+
+    def add_fir(self, fir):
+        self.access_request.further_information_requests.add(fir)
